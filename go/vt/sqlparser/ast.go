@@ -4992,10 +4992,44 @@ type AliasedTableExpr struct {
 	Auth       AuthInformation
 	Expr       SimpleTableExpr
 	Hints      *IndexHints
+	DsHints    *DatasourceHints
 	AsOf       *AsOf
 	As         TableIdent
 	Partitions Partitions
 	Lateral    bool
+}
+
+// DatasourceHints represents per-table datasource execution hints.
+// These are specified via FOR RATE('5m') STEP('30s') or FOR INSTANT
+// and control how a datasource backend executes the query for this table.
+type DatasourceHints struct {
+	Rate    string // e.g. "5m"
+	Step    string // e.g. "30s"
+	Instant bool
+}
+
+// Format formats the node.
+func (node *DatasourceHints) Format(buf *TrackedBuffer) {
+	if node == nil {
+		return
+	}
+	if node.Instant {
+		buf.Myprintf(" for instant")
+		if node.Step != "" {
+			buf.Myprintf(" step('%s')", node.Step)
+		}
+	} else if node.Rate != "" {
+		buf.Myprintf(" for rate('%s')", node.Rate)
+		if node.Step != "" {
+			buf.Myprintf(" step('%s')", node.Step)
+		}
+	} else if node.Step != "" {
+		buf.Myprintf(" for step('%s')", node.Step)
+	}
+}
+
+func (node *DatasourceHints) walkSubtree(visit Visit) error {
+	return nil
 }
 
 var _ AuthNode = (*AliasedTableExpr)(nil)
@@ -5050,6 +5084,9 @@ func (node *AliasedTableExpr) Format(buf *TrackedBuffer) {
 
 	if node.AsOf != nil {
 		buf.Myprintf(" %v", node.AsOf)
+	}
+	if node.DsHints != nil {
+		node.DsHints.Format(buf)
 	}
 	if !node.As.IsEmpty() {
 		buf.Myprintf(" as %v", node.As)

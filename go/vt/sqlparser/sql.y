@@ -96,6 +96,9 @@ func tryCastStatement(v interface{}) Statement {
 // Special tokens
 %token <bytes> FOR_SYSTEM_TIME
 %token <bytes> FOR_VERSION
+%token <bytes> FOR_RATE
+%token <bytes> FOR_STEP
+%token <bytes> FOR_INSTANT
 
 %left <bytes> EXCEPT
 %left <bytes> UNION
@@ -165,7 +168,7 @@ func tryCastStatement(v interface{}) Statement {
 %token <bytes> EACH ROW BEFORE FOLLOWS PRECEDES DEFINER INVOKER
 %token <bytes> INOUT OUT DETERMINISTIC CONTAINS READS MODIFIES SQL SECURITY TEMPORARY ALGORITHM MERGE TEMPTABLE UNDEFINED
 %token <bytes> EVENT EVENTS SCHEDULE EVERY STARTS ENDS COMPLETION PRESERVE CASCADED
-%token <bytes> INSTANT INPLACE COPY
+%token <bytes> INSTANT INPLACE COPY RATE STEP
 %token <bytes> DISCARD IMPORT
 %token <bytes> SHARED EXCLUSIVE
 %token <bytes> WITHOUT VALIDATION
@@ -375,6 +378,7 @@ func tryCastStatement(v interface{}) Statement {
 %type <val> procedure_name
 %type <val> event_name rename_event_name_opt
 %type <val> index_hint_list
+%type <val> datasource_hint_list
 %type <val> where_expression_opt
 %type <val> condition
 %type <val> boolean_value
@@ -8446,6 +8450,36 @@ aliased_table_options:
   {
     $$ = &AliasedTableExpr{AsOf: $1.(*AsOf), As: $3.(TableIdent), Hints: $4.(*IndexHints)}
   }
+| datasource_hint_list index_hint_list
+  {
+    $$ = &AliasedTableExpr{DsHints: $1.(*DatasourceHints), Hints: $2.(*IndexHints)}
+  }
+| datasource_hint_list as_opt table_alias index_hint_list
+  {
+    $$ = &AliasedTableExpr{DsHints: $1.(*DatasourceHints), As: $3.(TableIdent), Hints: $4.(*IndexHints)}
+  }
+
+datasource_hint_list:
+  FOR_RATE openb STRING closeb
+  {
+    $$ = &DatasourceHints{Rate: string($3)}
+  }
+| FOR_RATE openb STRING closeb STEP openb STRING closeb
+  {
+    $$ = &DatasourceHints{Rate: string($3), Step: string($7)}
+  }
+| FOR_STEP openb STRING closeb
+  {
+    $$ = &DatasourceHints{Step: string($3)}
+  }
+| FOR_INSTANT
+  {
+    $$ = &DatasourceHints{Instant: true}
+  }
+| FOR_INSTANT STEP openb STRING closeb
+  {
+    $$ = &DatasourceHints{Instant: true, Step: string($4)}
+  }
 
 as_of_clause:
   as_of_point_clause
@@ -11758,6 +11792,7 @@ non_reserved_keyword:
 | QUARTER
 | QUERY
 | RANDOM
+| RATE
 | REBUILD
 | REDUNDANT
 | REFERENCE
@@ -11818,6 +11853,7 @@ non_reserved_keyword:
 | STATS_AUTO_RECALC
 | STATS_PERSISTENT
 | STATS_SAMPLE_PAGES
+| STEP
 | STOP
 | STORAGE
 | STREAM
