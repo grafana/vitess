@@ -96,9 +96,7 @@ func tryCastStatement(v interface{}) Statement {
 // Special tokens
 %token <bytes> FOR_SYSTEM_TIME
 %token <bytes> FOR_VERSION
-%token <bytes> FOR_RATE
-%token <bytes> FOR_STEP
-%token <bytes> FOR_INSTANT
+%token <bytes> FOR_DATASOURCE
 
 %left <bytes> EXCEPT
 %left <bytes> UNION
@@ -378,7 +376,7 @@ func tryCastStatement(v interface{}) Statement {
 %type <val> procedure_name
 %type <val> event_name rename_event_name_opt
 %type <val> index_hint_list
-%type <val> datasource_hint_list
+%type <val> datasource_hint_list datasource_hints datasource_hint
 %type <val> where_expression_opt
 %type <val> condition
 %type <val> boolean_value
@@ -8460,25 +8458,31 @@ aliased_table_options:
   }
 
 datasource_hint_list:
-  FOR_RATE openb STRING closeb
+  FOR_DATASOURCE openb datasource_hints closeb
   {
-    $$ = &DatasourceHints{Rate: string($3)}
+    $$ = $3.(*DatasourceHints)
   }
-| FOR_RATE openb STRING closeb STEP openb STRING closeb
+
+datasource_hints:
+  datasource_hint
   {
-    $$ = &DatasourceHints{Rate: string($3), Step: string($7)}
+    $$ = &DatasourceHints{Hints: []DatasourceHint{$1.(DatasourceHint)}}
   }
-| FOR_STEP openb STRING closeb
+| datasource_hints ',' datasource_hint
   {
-    $$ = &DatasourceHints{Step: string($3)}
+    dsh := $1.(*DatasourceHints)
+    dsh.Hints = append(dsh.Hints, $3.(DatasourceHint))
+    $$ = dsh
   }
-| FOR_INSTANT
+
+datasource_hint:
+  sql_id openb STRING closeb
   {
-    $$ = &DatasourceHints{Instant: true}
+    $$ = DatasourceHint{Name: $1.(ColIdent).String(), Value: string($3)}
   }
-| FOR_INSTANT STEP openb STRING closeb
+| sql_id
   {
-    $$ = &DatasourceHints{Instant: true, Step: string($4)}
+    $$ = DatasourceHint{Name: $1.(ColIdent).String()}
   }
 
 as_of_clause:

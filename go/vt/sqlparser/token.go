@@ -479,14 +479,12 @@ func (tkn *Tokenizer) scanIdentifier(firstByte byte, isDbSystemVariable bool) (i
 				return FOR_SYSTEM_TIME, append(buffer.Bytes(), append([]byte{' '}, val...)...)
 			case VERSION:
 				return FOR_VERSION, append(buffer.Bytes(), append([]byte{' '}, val...)...)
-			case RATE:
-				return FOR_RATE, append(buffer.Bytes(), append([]byte{' '}, val...)...)
-			case STEP:
-				return FOR_STEP, append(buffer.Bytes(), append([]byte{' '}, val...)...)
-			case INSTANT:
-				return FOR_INSTANT, append(buffer.Bytes(), append([]byte{' '}, val...)...)
 			default:
 				tkn.digestToken(token, val)
+				if token == '(' {
+					// FOR ( — datasource hints: FOR (rate('5m'), step('30s'))
+					return FOR_DATASOURCE, buffer.Bytes()
+				}
 				return FOR, buffer.Bytes()
 			}
 		case NOT:

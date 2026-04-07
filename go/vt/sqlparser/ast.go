@@ -5000,32 +5000,37 @@ type AliasedTableExpr struct {
 }
 
 // DatasourceHints represents per-table datasource execution hints.
-// These are specified via FOR RATE('5m') STEP('30s') or FOR INSTANT
+// These are specified via FOR hint_name('value') or FOR flag_name
 // and control how a datasource backend executes the query for this table.
+// Hints are generic key-value pairs — any datasource can define its own.
 type DatasourceHints struct {
-	Rate    string // e.g. "5m"
-	Step    string // e.g. "30s"
-	Instant bool
+	Hints []DatasourceHint
+}
+
+// DatasourceHint is a single hint: a name with an optional string value.
+// Flag-style hints (e.g. FOR INSTANT) have an empty Value.
+type DatasourceHint struct {
+	Name  string // e.g. "rate", "step", "instant"
+	Value string // e.g. "5m", "30s", or "" for flags
 }
 
 // Format formats the node.
 func (node *DatasourceHints) Format(buf *TrackedBuffer) {
-	if node == nil {
+	if node == nil || len(node.Hints) == 0 {
 		return
 	}
-	if node.Instant {
-		buf.Myprintf(" for instant")
-		if node.Step != "" {
-			buf.Myprintf(" step('%s')", node.Step)
+	buf.Myprintf(" for (")
+	for i, h := range node.Hints {
+		if i > 0 {
+			buf.Myprintf(", ")
 		}
-	} else if node.Rate != "" {
-		buf.Myprintf(" for rate('%s')", node.Rate)
-		if node.Step != "" {
-			buf.Myprintf(" step('%s')", node.Step)
+		if h.Value != "" {
+			buf.Myprintf("%s('%s')", h.Name, h.Value)
+		} else {
+			buf.Myprintf("%s", h.Name)
 		}
-	} else if node.Step != "" {
-		buf.Myprintf(" for step('%s')", node.Step)
 	}
+	buf.Myprintf(")")
 }
 
 func (node *DatasourceHints) walkSubtree(visit Visit) error {
