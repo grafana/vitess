@@ -22493,45 +22493,45 @@ yydefault:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line sql.y:8452
 		{
-			yyVAL.val = &AliasedTableExpr{DsHints: yyDollar[1].val.(*DatasourceHints), Hints: yyDollar[2].val.(*IndexHints)}
+			yyVAL.val = &AliasedTableExpr{TableHints: yyDollar[1].val.(*TableHints), Hints: yyDollar[2].val.(*IndexHints)}
 		}
 	case 1356:
 		yyDollar = yyS[yypt-4 : yypt+1]
 //line sql.y:8456
 		{
-			yyVAL.val = &AliasedTableExpr{DsHints: yyDollar[1].val.(*DatasourceHints), As: yyDollar[3].val.(TableIdent), Hints: yyDollar[4].val.(*IndexHints)}
+			yyVAL.val = &AliasedTableExpr{TableHints: yyDollar[1].val.(*TableHints), As: yyDollar[3].val.(TableIdent), Hints: yyDollar[4].val.(*IndexHints)}
 		}
 	case 1357:
 		yyDollar = yyS[yypt-4 : yypt+1]
 //line sql.y:8462
 		{
-			yyVAL.val = yyDollar[3].val.(*DatasourceHints)
+			yyVAL.val = yyDollar[3].val.(*TableHints)
 		}
 	case 1358:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line sql.y:8468
 		{
-			yyVAL.val = &DatasourceHints{Hints: []DatasourceHint{yyDollar[1].val.(DatasourceHint)}}
+			yyVAL.val = &TableHints{Hints: []TableHint{yyDollar[1].val.(TableHint)}}
 		}
 	case 1359:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line sql.y:8472
 		{
-			dsh := yyDollar[1].val.(*DatasourceHints)
-			dsh.Hints = append(dsh.Hints, yyDollar[3].val.(DatasourceHint))
-			yyVAL.val = dsh
+			th := yyDollar[1].val.(*TableHints)
+			th.Hints = append(th.Hints, yyDollar[3].val.(TableHint))
+			yyVAL.val = th
 		}
 	case 1360:
 		yyDollar = yyS[yypt-4 : yypt+1]
 //line sql.y:8480
 		{
-			yyVAL.val = DatasourceHint{Name: yyDollar[1].val.(ColIdent).String(), Value: string(yyDollar[3].bytes)}
+			yyVAL.val = TableHint{Name: yyDollar[1].val.(ColIdent).String(), Value: string(yyDollar[3].bytes)}
 		}
 	case 1361:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line sql.y:8484
 		{
-			yyVAL.val = DatasourceHint{Name: yyDollar[1].val.(ColIdent).String()}
+			yyVAL.val = TableHint{Name: yyDollar[1].val.(ColIdent).String()}
 		}
 	case 1362:
 		yyDollar = yyS[yypt-1 : yypt+1]

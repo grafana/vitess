@@ -4992,30 +4992,30 @@ type AliasedTableExpr struct {
 	Auth       AuthInformation
 	Expr       SimpleTableExpr
 	Hints      *IndexHints
-	DsHints    *DatasourceHints
+	TableHints *TableHints
 	AsOf       *AsOf
 	As         TableIdent
 	Partitions Partitions
 	Lateral    bool
 }
 
-// DatasourceHints represents per-table datasource execution hints.
-// These are specified via FOR hint_name('value') or FOR flag_name
-// and control how a datasource backend executes the query for this table.
-// Hints are generic key-value pairs — any datasource can define its own.
-type DatasourceHints struct {
-	Hints []DatasourceHint
+// TableHints represents per-table execution hints specified via the
+// FOR (hint_name('value'), ...) clause on a table expression. Hints are
+// generic key-value pairs that the table implementation can interpret —
+// no specific hint names are hardcoded in the parser or planner.
+type TableHints struct {
+	Hints []TableHint
 }
 
-// DatasourceHint is a single hint: a name with an optional string value.
-// Flag-style hints (e.g. FOR INSTANT) have an empty Value.
-type DatasourceHint struct {
+// TableHint is a single hint: a name with an optional string value.
+// Flag-style hints (e.g. FOR (instant)) have an empty Value.
+type TableHint struct {
 	Name  string // e.g. "rate", "step", "instant"
 	Value string // e.g. "5m", "30s", or "" for flags
 }
 
 // Format formats the node.
-func (node *DatasourceHints) Format(buf *TrackedBuffer) {
+func (node *TableHints) Format(buf *TrackedBuffer) {
 	if node == nil || len(node.Hints) == 0 {
 		return
 	}
@@ -5033,7 +5033,7 @@ func (node *DatasourceHints) Format(buf *TrackedBuffer) {
 	buf.Myprintf(")")
 }
 
-func (node *DatasourceHints) walkSubtree(visit Visit) error {
+func (node *TableHints) walkSubtree(visit Visit) error {
 	return nil
 }
 
@@ -5090,8 +5090,8 @@ func (node *AliasedTableExpr) Format(buf *TrackedBuffer) {
 	if node.AsOf != nil {
 		buf.Myprintf(" %v", node.AsOf)
 	}
-	if node.DsHints != nil {
-		node.DsHints.Format(buf)
+	if node.TableHints != nil {
+		node.TableHints.Format(buf)
 	}
 	if !node.As.IsEmpty() {
 		buf.Myprintf(" as %v", node.As)

@@ -376,7 +376,7 @@ func tryCastStatement(v interface{}) Statement {
 %type <val> procedure_name
 %type <val> event_name rename_event_name_opt
 %type <val> index_hint_list
-%type <val> datasource_hint_list datasource_hints datasource_hint
+%type <val> table_hint_list table_hints table_hint
 %type <val> where_expression_opt
 %type <val> condition
 %type <val> boolean_value
@@ -8448,41 +8448,41 @@ aliased_table_options:
   {
     $$ = &AliasedTableExpr{AsOf: $1.(*AsOf), As: $3.(TableIdent), Hints: $4.(*IndexHints)}
   }
-| datasource_hint_list index_hint_list
+| table_hint_list index_hint_list
   {
-    $$ = &AliasedTableExpr{DsHints: $1.(*DatasourceHints), Hints: $2.(*IndexHints)}
+    $$ = &AliasedTableExpr{TableHints: $1.(*TableHints), Hints: $2.(*IndexHints)}
   }
-| datasource_hint_list as_opt table_alias index_hint_list
+| table_hint_list as_opt table_alias index_hint_list
   {
-    $$ = &AliasedTableExpr{DsHints: $1.(*DatasourceHints), As: $3.(TableIdent), Hints: $4.(*IndexHints)}
-  }
-
-datasource_hint_list:
-  FOR_DATASOURCE openb datasource_hints closeb
-  {
-    $$ = $3.(*DatasourceHints)
+    $$ = &AliasedTableExpr{TableHints: $1.(*TableHints), As: $3.(TableIdent), Hints: $4.(*IndexHints)}
   }
 
-datasource_hints:
-  datasource_hint
+table_hint_list:
+  FOR_DATASOURCE openb table_hints closeb
   {
-    $$ = &DatasourceHints{Hints: []DatasourceHint{$1.(DatasourceHint)}}
-  }
-| datasource_hints ',' datasource_hint
-  {
-    dsh := $1.(*DatasourceHints)
-    dsh.Hints = append(dsh.Hints, $3.(DatasourceHint))
-    $$ = dsh
+    $$ = $3.(*TableHints)
   }
 
-datasource_hint:
+table_hints:
+  table_hint
+  {
+    $$ = &TableHints{Hints: []TableHint{$1.(TableHint)}}
+  }
+| table_hints ',' table_hint
+  {
+    th := $1.(*TableHints)
+    th.Hints = append(th.Hints, $3.(TableHint))
+    $$ = th
+  }
+
+table_hint:
   sql_id openb STRING closeb
   {
-    $$ = DatasourceHint{Name: $1.(ColIdent).String(), Value: string($3)}
+    $$ = TableHint{Name: $1.(ColIdent).String(), Value: string($3)}
   }
 | sql_id
   {
-    $$ = DatasourceHint{Name: $1.(ColIdent).String()}
+    $$ = TableHint{Name: $1.(ColIdent).String()}
   }
 
 as_of_clause:
