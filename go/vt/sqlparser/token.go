@@ -482,8 +482,8 @@ func (tkn *Tokenizer) scanIdentifier(firstByte byte, isDbSystemVariable bool) (i
 			default:
 				tkn.digestToken(token, val)
 				if token == '(' {
-					// FOR ( — datasource hints: FOR (rate('5m'), step('30s'))
-					return FOR_DATASOURCE, buffer.Bytes()
+					// FOR ( — table hints: FOR (rate('5m'), step('30s'))
+					return FOR_TABLE_HINT, buffer.Bytes()
 				}
 				return FOR, buffer.Bytes()
 			}

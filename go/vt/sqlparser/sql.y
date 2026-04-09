@@ -96,7 +96,7 @@ func tryCastStatement(v interface{}) Statement {
 // Special tokens
 %token <bytes> FOR_SYSTEM_TIME
 %token <bytes> FOR_VERSION
-%token <bytes> FOR_DATASOURCE
+%token <bytes> FOR_TABLE_HINT
 
 %left <bytes> EXCEPT
 %left <bytes> UNION
@@ -8458,7 +8458,7 @@ aliased_table_options:
   }
 
 table_hint_list:
-  FOR_DATASOURCE openb table_hints closeb
+  FOR_TABLE_HINT openb table_hints closeb
   {
     $$ = $3.(*TableHints)
   }
