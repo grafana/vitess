@@ -481,6 +481,10 @@ func (tkn *Tokenizer) scanIdentifier(firstByte byte, isDbSystemVariable bool) (i
 				return FOR_VERSION, append(buffer.Bytes(), append([]byte{' '}, val...)...)
 			default:
 				tkn.digestToken(token, val)
+				if token == '(' {
+					// FOR ( — table hints: FOR (rate('5m'), step('30s'))
+					return FOR_TABLE_HINT, buffer.Bytes()
+				}
 				return FOR, buffer.Bytes()
 			}
 		case NOT:

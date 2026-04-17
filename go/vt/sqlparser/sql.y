@@ -96,6 +96,7 @@ func tryCastStatement(v interface{}) Statement {
 // Special tokens
 %token <bytes> FOR_SYSTEM_TIME
 %token <bytes> FOR_VERSION
+%token <bytes> FOR_TABLE_HINT
 
 %left <bytes> EXCEPT
 %left <bytes> UNION
@@ -375,6 +376,7 @@ func tryCastStatement(v interface{}) Statement {
 %type <val> procedure_name
 %type <val> event_name rename_event_name_opt
 %type <val> index_hint_list
+%type <val> table_hint_list table_hints table_hint
 %type <val> where_expression_opt
 %type <val> condition
 %type <val> boolean_value
@@ -8445,6 +8447,42 @@ aliased_table_options:
 | as_of_clause as_opt table_alias index_hint_list
   {
     $$ = &AliasedTableExpr{AsOf: $1.(*AsOf), As: $3.(TableIdent), Hints: $4.(*IndexHints)}
+  }
+| table_hint_list index_hint_list
+  {
+    $$ = &AliasedTableExpr{TableHints: $1.(*TableHints), Hints: $2.(*IndexHints)}
+  }
+| table_hint_list as_opt table_alias index_hint_list
+  {
+    $$ = &AliasedTableExpr{TableHints: $1.(*TableHints), As: $3.(TableIdent), Hints: $4.(*IndexHints)}
+  }
+
+table_hint_list:
+  FOR_TABLE_HINT openb table_hints closeb
+  {
+    $$ = $3.(*TableHints)
+  }
+
+table_hints:
+  table_hint
+  {
+    $$ = &TableHints{Hints: []TableHint{$1.(TableHint)}}
+  }
+| table_hints ',' table_hint
+  {
+    th := $1.(*TableHints)
+    th.Hints = append(th.Hints, $3.(TableHint))
+    $$ = th
+  }
+
+table_hint:
+  sql_id openb STRING closeb
+  {
+    $$ = TableHint{Name: $1.(ColIdent).String(), Value: string($3)}
+  }
+| sql_id
+  {
+    $$ = TableHint{Name: $1.(ColIdent).String()}
   }
 
 as_of_clause:
