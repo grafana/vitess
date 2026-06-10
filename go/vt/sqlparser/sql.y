@@ -8480,6 +8480,14 @@ table_hint:
   {
     $$ = TableHint{Name: $1.(ColIdent).String(), Value: string($3)}
   }
+| sql_id openb INTEGRAL closeb
+  {
+    $$ = TableHint{Name: $1.(ColIdent).String(), Value: string($3), NumericArg: true}
+  }
+| sql_id openb closeb
+  {
+    $$ = TableHint{Name: $1.(ColIdent).String(), EmptyParens: true}
+  }
 | sql_id
   {
     $$ = TableHint{Name: $1.(ColIdent).String()}

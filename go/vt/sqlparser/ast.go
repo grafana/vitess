@@ -5007,11 +5007,15 @@ type TableHints struct {
 	Hints []TableHint
 }
 
-// TableHint is a single hint: a name with an optional string value.
-// Flag-style hints (e.g. FOR (instant)) have an empty Value.
+// TableHint is a single hint: a name with an optional argument.
+// Flag-style hints (e.g. FOR (instant)) have an empty Value and no parens.
+// Empty-paren hints (e.g. FOR (rate())) set EmptyParens.
+// Numeric arguments (e.g. FOR (exemplars(10))) set NumericArg.
 type TableHint struct {
-	Name  string // e.g. "rate", "step", "instant"
-	Value string // e.g. "5m", "30s", or "" for flags
+	Name        string // e.g. "rate", "step", "instant"
+	Value       string // e.g. "5m", "30s", "10", or "" for flags / empty parens
+	EmptyParens bool   // true for rate() — parens with no argument
+	NumericArg  bool   // true for exemplars(10) — unquoted numeric argument
 }
 
 // Format formats the node.
@@ -5024,9 +5028,14 @@ func (node *TableHints) Format(buf *TrackedBuffer) {
 		if i > 0 {
 			buf.Myprintf(", ")
 		}
-		if h.Value != "" {
+		switch {
+		case h.EmptyParens:
+			buf.Myprintf("%s()", h.Name)
+		case h.Value != "" && h.NumericArg:
+			buf.Myprintf("%s(%s)", h.Name, h.Value)
+		case h.Value != "":
 			buf.Myprintf("%s('%s')", h.Name, h.Value)
-		} else {
+		default:
 			buf.Myprintf("%s", h.Name)
 		}
 	}
