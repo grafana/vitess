@@ -2082,6 +2082,14 @@ var (
 			output: "alter table b add index a ((case when id = `value` then upper(id) else lower(id) end))",
 		},
 		{
+			input:  "CREATE INDEX idx1 on b (a, (id + val), c, (upper(id)), d)",
+			output: "alter table b add index idx1 (a, (id + val), c, (upper(id)), d)",
+		},
+		{
+			input:  "CREATE INDEX idx1 on b ((foo(val)), (bar(id)))",
+			output: "alter table b add index idx1 ((foo(val)), (bar(id)))",
+		},
+		{
 			input:  "create unique index a on b (id)",
 			output: "alter table b add unique index a (id)",
 		},
@@ -3780,6 +3788,21 @@ var (
 			input:  "CREATE TABLE mytable (h int DEFAULT (date_format(now(),_utf8mb4'%Y')))",
 			output: "create table mytable (\n\th int default (date_format(now(), _utf8mb4 '%Y'))\n)",
 		}, {
+			input:  "CREATE TABLE t (id INT PRIMARY KEY, s LONGTEXT NOT NULL DEFAULT JSON_OBJECT())",
+			output: "create table t (\n\tid INT primary key,\n\ts LONGTEXT not null default JSON_OBJECT()\n)",
+		}, {
+			input:  "CREATE TABLE t (id INT PRIMARY KEY, s TEXT NOT NULL DEFAULT CONCAT('a', 'b'))",
+			output: "create table t (\n\tid INT primary key,\n\ts TEXT not null default CONCAT('a', 'b')\n)",
+		}, {
+			input:  "CREATE TABLE t (id INT PRIMARY KEY, s LONGTEXT NOT NULL DEFAULT CAST(1 as datetime))",
+			output: "create table t (\n\tid INT primary key,\n\ts LONGTEXT not null default CAST(1 as datetime)\n)",
+		}, {
+			input:  "CREATE TABLE t (id INT PRIMARY KEY, s LONGTEXT NOT NULL DEFAULT EXTRACT(DAY from '2020-10-1'))",
+			output: "create table t (\n\tid INT primary key,\n\ts LONGTEXT not null default EXTRACT(DAY from '2020-10-1')\n)",
+		}, {
+			input:  "CREATE TABLE t (id INT PRIMARY KEY, s LONGTEXT NOT NULL DEFAULT replace(uuid(),'-',''))",
+			output: "create table t (\n\tid INT primary key,\n\ts LONGTEXT not null default replace(uuid(), '-', '')\n)",
+		}, {
 			input:  "CREATE TABLE mytable (pk int NOT NULL, col2 varchar(20) NOT NULL DEFAULT 'sometext', PRIMARY KEY (pk), CONSTRAINT status CHECK (col2 like _utf8mb4'%sometext%'))",
 			output: "create table mytable (\n\tpk int not null,\n\tcol2 varchar(20) not null default 'sometext',\n\tPRIMARY KEY (pk),\n\tconstraint status check (col2 like _utf8mb4 '%sometext%')\n)",
 		}, {
@@ -4397,6 +4420,18 @@ var (
 		{
 			input:  `alter table t comment "asdf"`,
 			output: "alter table t comment 'asdf'",
+		},
+		{
+			input: "create table t (id int primary key) target_row_size=2048",
+			output: "create table t (\n" +
+				"\tid int primary key\n" +
+				") target_row_size 2048",
+		},
+		{
+			input: "create table t (id int primary key) toast_tuple_target=2048",
+			output: "create table t (\n" +
+				"\tid int primary key\n" +
+				") toast_tuple_target 2048",
 		},
 		{
 			input:  "alter table t compression='asdf'",
