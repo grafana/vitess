@@ -4992,58 +4992,10 @@ type AliasedTableExpr struct {
 	Auth       AuthInformation
 	Expr       SimpleTableExpr
 	Hints      *IndexHints
-	TableHints *TableHints
 	AsOf       *AsOf
 	As         TableIdent
 	Partitions Partitions
 	Lateral    bool
-}
-
-// TableHints represents per-table execution hints specified via the
-// FOR (hint_name('value'), ...) clause on a table expression. Hints are
-// generic key-value pairs that the table implementation can interpret —
-// no specific hint names are hardcoded in the parser or planner.
-type TableHints struct {
-	Hints []TableHint
-}
-
-// TableHint is a single hint: a name with an optional argument.
-// Flag-style hints (e.g. FOR (instant)) have an empty Value and no parens.
-// Empty-paren hints (e.g. FOR (rate())) set EmptyParens.
-// Numeric arguments (e.g. FOR (exemplars(10))) set NumericArg.
-type TableHint struct {
-	Name        string // e.g. "rate", "step", "instant"
-	Value       string // e.g. "5m", "30s", "10", or "" for flags / empty parens
-	EmptyParens bool   // true for rate() — parens with no argument
-	NumericArg  bool   // true for exemplars(10) — unquoted numeric argument
-}
-
-// Format formats the node.
-func (node *TableHints) Format(buf *TrackedBuffer) {
-	if node == nil || len(node.Hints) == 0 {
-		return
-	}
-	buf.Myprintf(" for (")
-	for i, h := range node.Hints {
-		if i > 0 {
-			buf.Myprintf(", ")
-		}
-		switch {
-		case h.EmptyParens:
-			buf.Myprintf("%s()", h.Name)
-		case h.Value != "" && h.NumericArg:
-			buf.Myprintf("%s(%s)", h.Name, h.Value)
-		case h.Value != "":
-			buf.Myprintf("%s('%s')", h.Name, h.Value)
-		default:
-			buf.Myprintf("%s", h.Name)
-		}
-	}
-	buf.Myprintf(")")
-}
-
-func (node *TableHints) walkSubtree(visit Visit) error {
-	return nil
 }
 
 var _ AuthNode = (*AliasedTableExpr)(nil)
@@ -5098,9 +5050,6 @@ func (node *AliasedTableExpr) Format(buf *TrackedBuffer) {
 
 	if node.AsOf != nil {
 		buf.Myprintf(" %v", node.AsOf)
-	}
-	if node.TableHints != nil {
-		node.TableHints.Format(buf)
 	}
 	if !node.As.IsEmpty() {
 		buf.Myprintf(" as %v", node.As)
