@@ -597,6 +597,9 @@ const (
 // Select.Lock
 const (
 	ForUpdateStr           = " for update"
+	ForShareStr            = " for share"
+	ForShareSkipLockedStr  = " for share skip locked"
+	ForShareNowaitStr      = " for share nowait"
 	ShareModeStr           = " lock in share mode"
 	ForUpdateSkipLockedStr = " for update skip locked"
 	ForUpdateNowaitStr     = " for update nowait"
