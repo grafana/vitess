@@ -5352,6 +5352,44 @@ func TestForUpdateOf(t *testing.T) {
 	}
 }
 
+func TestForShareLock(t *testing.T) {
+	cases := []struct {
+		input, lockType, output string
+	}{
+		{"SELECT * FROM t FOR SHARE", " for share", "select * from t for share"},
+		{"SELECT * FROM t FOR SHARE NOWAIT", " for share nowait", "select * from t for share nowait"},
+		{"SELECT * FROM t FOR SHARE SKIP LOCKED", " for share skip locked", "select * from t for share skip locked"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.input, func(t *testing.T) {
+			statement, err := Parse(tc.input)
+			require.NoError(t, err)
+			selectStatement, ok := statement.(*Select)
+			require.True(t, ok)
+			require.NotNil(t, selectStatement.Lock)
+			assert.Equal(t, tc.lockType, selectStatement.Lock.Type)
+			assert.Equal(t, tc.output, String(statement))
+
+			roundTrip, err := Parse(String(statement))
+			require.NoError(t, err)
+			assert.Equal(t, tc.output, String(roundTrip))
+		})
+	}
+}
+
+func TestForShareRejectsUnsupportedClauses(t *testing.T) {
+	for _, input := range []string{
+		"select * from t for share of t",
+		"select * from t for share nowait skip locked",
+		"select * from t for share for update",
+	} {
+		t.Run(input, func(t *testing.T) {
+			_, err := Parse(input)
+			require.Error(t, err)
+		})
+	}
+}
+
 func TestPipesAsConcatMode(t *testing.T) {
 	parserOptions := ParserOptions{PipesAsConcat: true}
 	for _, tcase := range validPipesAsConcatSQL {

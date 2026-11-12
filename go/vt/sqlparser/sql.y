@@ -10312,6 +10312,18 @@ lock_opt:
   {
     $$ = ForUpdateStr
   }
+| FOR SHARE
+  {
+    $$ = ForShareStr
+  }
+| FOR SHARE SKIP LOCKED
+  {
+    $$ = ForShareSkipLockedStr
+  }
+| FOR SHARE NOWAIT
+  {
+    $$ = ForShareNowaitStr
+  }
 | FOR UPDATE SKIP LOCKED
   {
     $$ = ForUpdateSkipLockedStr
