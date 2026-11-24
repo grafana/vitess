@@ -683,6 +683,7 @@ func (node *Select) walkSubtree(visit Visit) error {
 		node.Where,
 		node.GroupBy,
 		node.Having,
+		node.Window,
 		node.OrderBy,
 		node.Limit,
 		node.Into,
@@ -893,8 +894,11 @@ func (node *SetOp) walkSubtree(visit Visit) error {
 	}
 	return Walk(
 		visit,
+		node.With,
 		node.Left,
 		node.Right,
+		node.OrderBy,
+		node.Limit,
 	)
 }
 
@@ -1792,6 +1796,7 @@ func (node *Insert) walkSubtree(visit Visit) error {
 		node.Rows,
 		node.OnDup,
 		node.With,
+		node.Returning,
 	)
 }
 
@@ -6775,15 +6780,16 @@ func (node *SubstrExpr) replace(from, to Expr) bool {
 }
 
 func (node *SubstrExpr) walkSubtree(visit Visit) error {
-	if node == nil || node.Name == nil {
+	if node == nil {
 		return nil
 	}
-	return Walk(
-		visit,
-		node.Name,
-		node.From,
-		node.To,
-	)
+	var input Expr
+	if node.Name != nil {
+		input = node.Name
+	} else if node.StrVal != nil {
+		input = node.StrVal
+	}
+	return Walk(visit, input, node.From, node.To)
 }
 
 // Options for Trim
