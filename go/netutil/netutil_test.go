@@ -29,13 +29,15 @@ func checkDistribution(t *testing.T, data []*net.SRV, margin float64) {
 		sum += int(srv.Weight)
 	}
 
+	// Seed a local generator so the test does not depend on global rand state.
+	rng := rand.New(rand.NewSource(1))
 	results := make(map[string]int)
 
 	count := 1000
 	for j := 0; j < count; j++ {
 		d := make([]*net.SRV, len(data))
 		copy(d, data)
-		byPriorityWeight(d).shuffleByWeight()
+		byPriorityWeight(d).shuffleByWeight(rng.Intn)
 		key := d[0].Target
 		results[key] = results[key] + 1
 	}
@@ -53,7 +55,6 @@ func checkDistribution(t *testing.T, data []*net.SRV, margin float64) {
 }
 
 func testUniformity(t *testing.T, size int, margin float64) {
-	rand.Seed(1)
 	data := make([]*net.SRV, size)
 	for i := 0; i < size; i++ {
 		data[i] = &net.SRV{Target: fmt.Sprintf("%c", 'a'+i), Weight: 1}
@@ -69,7 +70,6 @@ func TestUniformity(t *testing.T) {
 }
 
 func testWeighting(t *testing.T, margin float64) {
-	rand.Seed(1)
 	data := []*net.SRV{
 		{Target: "a", Weight: 60},
 		{Target: "b", Weight: 30},

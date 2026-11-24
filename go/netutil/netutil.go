@@ -42,14 +42,14 @@ func (addrs byPriorityWeight) Less(i, j int) bool {
 // shuffleByWeight shuffles SRV records by weight using the algorithm
 // described in RFC 2782.
 // NOTE(msolo) This is disabled when the weights are zero.
-func (addrs byPriorityWeight) shuffleByWeight() {
+func (addrs byPriorityWeight) shuffleByWeight(intn func(int) int) {
 	sum := 0
 	for _, addr := range addrs {
 		sum += int(addr.Weight)
 	}
 	for sum > 0 && len(addrs) > 1 {
 		s := 0
-		n := rand.Intn(sum)
+		n := intn(sum)
 		for i := range addrs {
 			s += int(addrs[i].Weight)
 			if s > n {
@@ -71,11 +71,11 @@ func (addrs byPriorityWeight) sortRfc2782() {
 	i := 0
 	for j := 1; j < len(addrs); j++ {
 		if addrs[i].Priority != addrs[j].Priority {
-			addrs[i:j].shuffleByWeight()
+			addrs[i:j].shuffleByWeight(rand.Intn)
 			i = j
 		}
 	}
-	addrs[i:].shuffleByWeight()
+	addrs[i:].shuffleByWeight(rand.Intn)
 }
 
 // SortRfc2782 reorders SRV records as specified in RFC 2782.
